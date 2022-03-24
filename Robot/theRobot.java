@@ -617,8 +617,93 @@ public class theRobot extends JFrame {
     // This is the function you'd need to write to make the robot move using your AI;
     // You do NOT need to write this function for this lab; it can remain as is
     int automaticAction() {
-        
+        double[][] utilities;
+        utilities = new double[mundo.width][mundo.height];
+
+        final double STAIRWELL = -200;
+        final double GOAL = 1000;
+
+        // Initialize Estimate of U_i(s)
+        for (int i = 0; i < mundo.width; i++) {
+            for (int j = 0; j < mundo.height; j++) {
+                switch (mundo.grid[i][j]) {
+                    // 0 = Empty Space
+                    case 0:
+                        utilities[i][j] = 0;
+                    
+                    // 1 = Wall 
+                    case 1:
+                        utilities[i][j] = 0;
+                    
+                    // 2 = Stairwell
+                    case 2:
+                        utilities[i][j] = STAIRWELL;
+                        
+                    // 3 = Goal
+                    case 3:
+                        utilities[i][j] = GOAL;
+                }
+            }
+        }
+
+        // For all s in S, update estimate of U_{i+1}(s) --> Repeat Until Convergence
+        double delta = 1;
+        final double DELTA_BREAK = 0.001;
+        final double GAMMA = 0.95;
+
+        while (delta > DELTA_BREAK) {
+            delta = 0;
+
+            double[][] tmpUtilities;
+            tmpUtilities = new double[mundo.width][mundo.height];
+            
+            for (int i = 0; i < mundo.width; i++) {
+                for (int j = 0; j < mundo.height; j++) {
+                    double Us = utilities[i][j] + GAMMA * maximum(utilities, i, j);
+                    tmpUtilities[i][j] = Us;
+
+                    double difference = Math.abs(utilities[i][j] - Us);
+                    delta += difference;
+                }
+            }
+
+            utilities = tmpUtilities;
+            printUtilities(utilities);
+        }
+    
         return STAY;  // default action for now
+    }
+
+    double maximum(double[][] utilities, int i, int j) {
+        double maxSoFar = -9999999;
+        
+        if (utilities[i][j] > maxSoFar) {
+            maxSoFar = utilities[i][j];
+        }
+        if (i < mundo.width-1  && mundo.grid[i+1][j] != 1 && utilities[i+1][j] > maxSoFar) {
+            maxSoFar = utilities[i+1][j];
+        }
+        if (i != 0 && mundo.grid[i-1][j] != 1 && utilities[i-1][j] > maxSoFar) {
+            maxSoFar = utilities[i-1][j];
+        }
+        if (j < mundo.height-1 && mundo.grid[i][j+1] != 1 && utilities[i][j+1] > maxSoFar) {
+            maxSoFar = utilities[i][j+1];
+        }
+        if (j != 0 && mundo.grid[i][j-1] != 1 && utilities[i][j-1] > maxSoFar) {
+            maxSoFar = utilities[i][j-1];
+        }
+        
+        return maxSoFar;
+    }
+
+    void printUtilities(double[][] utilities) {
+        System.out.println("-----------------UTILITIES:-----------------");
+        for (int i = 0; i < mundo.width; i++) {
+            for (int j = 0; j < mundo.height; j++) {
+                System.out.print(utilities[i][j] + "\t");
+            }
+            System.out.println();
+        }
     }
     
     void doStuff() {
@@ -636,7 +721,7 @@ public class theRobot extends JFrame {
                                                 // you'll need to write this function for part III
                 
                 sout.println(action); // send the action to the Server
-                
+            
                 // get sonar readings after the robot moves
                 String sonars = sin.readLine();
                 //System.out.println("Sonars: " + sonars);
