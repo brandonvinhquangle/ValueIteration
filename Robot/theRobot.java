@@ -613,12 +613,75 @@ public class theRobot extends JFrame {
             }
         }
     }
-    
+
+    boolean flag = false;
+    double[][] utilities;
+    int xPos = startX;
+    int yPos = startY;
+
     // This is the function you'd need to write to make the robot move using your AI;
     // You do NOT need to write this function for this lab; it can remain as is
     int automaticAction() {
-        double[][] utilities;
+        if (!flag) {
+            makeUtilities();
+        }
+
+        int action = -1;
+        double max = -9999;
+
+        if (utilities[xPos][yPos] > max) {
+            action = STAY;
+            max = utilities[xPos][yPos];
+        }
+        if (utilities[xPos + 1][yPos] > max) {
+            action = EAST;
+            max = utilities[xPos + 1][yPos];
+        }
+        if (utilities[xPos - 1][yPos] > max) {
+            action = WEST;
+            max = utilities[xPos - 1][yPos];
+        }
+        if (utilities[xPos][yPos + 1] > max) {
+            action = SOUTH;
+            max = utilities[xPos][yPos + 1];
+        }
+        if (utilities[xPos][yPos - 1] > max) {
+            action = NORTH;
+            max = utilities[xPos][yPos - 1];
+        }
+
+        if (action == NORTH) {
+            yPos -= 1;
+        }
+        if (action == SOUTH) {
+            yPos += 1;
+        }
+        if (action == EAST) {
+            xPos += 1;
+        }
+        if (action == WEST) {
+            xPos -= 1;
+        }
+        
+        return action;  // default action for now
+    }
+
+    double[][] copyArray(double[][] original) {
+        double[][] n = new double[mundo.width][mundo.height];
+        for (int i = 0; i < mundo.width; i++) {
+            for (int j = 0; j < mundo.height; j++) {
+                n[i][j] = original[i][j];
+            }
+        }
+        return n;
+    }
+
+    void makeUtilities() {
+        flag = true;
         utilities = new double[mundo.width][mundo.height];
+
+        xPos = startX;
+        yPos = startY;
 
         final double STAIRWELL = -200;
         final double GOAL = 1000;
@@ -630,26 +693,34 @@ public class theRobot extends JFrame {
                     // 0 = Empty Space
                     case 0:
                         utilities[i][j] = 0;
+                        break;
                     
                     // 1 = Wall 
                     case 1:
                         utilities[i][j] = 0;
+                        break;
                     
                     // 2 = Stairwell
                     case 2:
                         utilities[i][j] = STAIRWELL;
+                        break;
                         
                     // 3 = Goal
                     case 3:
                         utilities[i][j] = GOAL;
+                        break;
                 }
             }
         }
 
+        double[][] ogUtilities = copyArray(utilities);
+
         // For all s in S, update estimate of U_{i+1}(s) --> Repeat Until Convergence
         double delta = 1;
-        final double DELTA_BREAK = 0.001;
+        final double DELTA_BREAK = 0.1;
         final double GAMMA = 0.95;
+
+        printUtilities(utilities);
 
         while (delta > DELTA_BREAK) {
             delta = 0;
@@ -659,19 +730,24 @@ public class theRobot extends JFrame {
             
             for (int i = 0; i < mundo.width; i++) {
                 for (int j = 0; j < mundo.height; j++) {
-                    double Us = utilities[i][j] + GAMMA * maximum(utilities, i, j);
-                    tmpUtilities[i][j] = Us;
+                    if (mundo.grid[i][j] == 2) {
+                        tmpUtilities[i][j] = STAIRWELL;
+                    }
+                    if (mundo.grid[i][j] == 3) {
+                        tmpUtilities[i][j] = GOAL;
+                    }
+                    if (mundo.grid[i][j] == 0) {
+                        double Us = ogUtilities[i][j] + GAMMA * maximum(utilities, i, j);
+                        tmpUtilities[i][j] = Us;
 
-                    double difference = Math.abs(utilities[i][j] - Us);
-                    delta += difference;
+                        double difference = Math.abs(utilities[i][j] - Us);
+                        delta += difference;
+                    }
                 }
             }
-
             utilities = tmpUtilities;
-            printUtilities(utilities);
         }
-    
-        return STAY;  // default action for now
+        printUtilities(utilities);
     }
 
     double maximum(double[][] utilities, int i, int j) {
@@ -697,10 +773,11 @@ public class theRobot extends JFrame {
     }
 
     void printUtilities(double[][] utilities) {
+        System.out.println();
         System.out.println("-----------------UTILITIES:-----------------");
         for (int i = 0; i < mundo.width; i++) {
             for (int j = 0; j < mundo.height; j++) {
-                System.out.print(utilities[i][j] + "\t");
+                System.out.print(Math.round(utilities[j][i]) + "\t");
             }
             System.out.println();
         }
