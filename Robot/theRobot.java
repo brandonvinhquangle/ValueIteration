@@ -622,48 +622,56 @@ public class theRobot extends JFrame {
     // This is the function you'd need to write to make the robot move using your AI;
     // You do NOT need to write this function for this lab; it can remain as is
     int automaticAction() {
-        if (!flag) {
-            makeUtilities();
+        /* Position is Known */
+        if (knownPosition) {
+            if (!flag) {
+                makeUtilities();
+            }
+    
+            int action = -1;
+            double max = -9999;
+    
+            if (utilities[xPos][yPos] > max) {
+                action = STAY;
+                max = utilities[xPos][yPos];
+            }
+            if (utilities[xPos + 1][yPos] > max) {
+                action = EAST;
+                max = utilities[xPos + 1][yPos];
+            }
+            if (utilities[xPos - 1][yPos] > max) {
+                action = WEST;
+                max = utilities[xPos - 1][yPos];
+            }
+            if (utilities[xPos][yPos + 1] > max) {
+                action = SOUTH;
+                max = utilities[xPos][yPos + 1];
+            }
+            if (utilities[xPos][yPos - 1] > max) {
+                action = NORTH;
+                max = utilities[xPos][yPos - 1];
+            }
+    
+            if (action == NORTH) {
+                yPos -= 1;
+            }
+            if (action == SOUTH) {
+                yPos += 1;
+            }
+            if (action == EAST) {
+                xPos += 1;
+            }
+            if (action == WEST) {
+                xPos -= 1;
+            }
+            
+            return action;
         }
-
-        int action = -1;
-        double max = -9999;
-
-        if (utilities[xPos][yPos] > max) {
-            action = STAY;
-            max = utilities[xPos][yPos];
-        }
-        if (utilities[xPos + 1][yPos] > max) {
-            action = EAST;
-            max = utilities[xPos + 1][yPos];
-        }
-        if (utilities[xPos - 1][yPos] > max) {
-            action = WEST;
-            max = utilities[xPos - 1][yPos];
-        }
-        if (utilities[xPos][yPos + 1] > max) {
-            action = SOUTH;
-            max = utilities[xPos][yPos + 1];
-        }
-        if (utilities[xPos][yPos - 1] > max) {
-            action = NORTH;
-            max = utilities[xPos][yPos - 1];
-        }
-
-        if (action == NORTH) {
-            yPos -= 1;
-        }
-        if (action == SOUTH) {
-            yPos += 1;
-        }
-        if (action == EAST) {
-            xPos += 1;
-        }
-        if (action == WEST) {
-            xPos -= 1;
-        }
+    
+        /* TOOD: Position is Unknown */
         
-        return action;  // default action for now
+        
+        return STAY;
     }
 
     double[][] copyArray(double[][] original) {
