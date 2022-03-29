@@ -600,6 +600,7 @@ public class theRobot extends JFrame {
                                    //  new probabilities will show up in the probability map on the GUI
     }
     
+    /* Helper Functions for Lab 2 */
     void normalize() {
         double total = 0;
         for (int i = 0; i < mundo.width; i++) {
@@ -674,16 +675,6 @@ public class theRobot extends JFrame {
         return STAY;
     }
 
-    double[][] copyArray(double[][] original) {
-        double[][] n = new double[mundo.width][mundo.height];
-        for (int i = 0; i < mundo.width; i++) {
-            for (int j = 0; j < mundo.height; j++) {
-                n[i][j] = original[i][j];
-            }
-        }
-        return n;
-    }
-
     void makeUtilities() {
         flag = true;
         utilities = new double[mundo.width][mundo.height];
@@ -756,6 +747,17 @@ public class theRobot extends JFrame {
             utilities = tmpUtilities;
         }
         printUtilities(utilities);
+    }
+
+    /* Helper Functions for Lab 3 */
+    double[][] copyArray(double[][] original) {
+        double[][] n = new double[mundo.width][mundo.height];
+        for (int i = 0; i < mundo.width; i++) {
+            for (int j = 0; j < mundo.height; j++) {
+                n[i][j] = original[i][j];
+            }
+        }
+        return n;
     }
 
     double maximum(double[][] utilities, int i, int j) {
