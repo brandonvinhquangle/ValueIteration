@@ -623,15 +623,16 @@ public class theRobot extends JFrame {
     // This is the function you'd need to write to make the robot move using your AI;
     // You do NOT need to write this function for this lab; it can remain as is
     int automaticAction() {
+        if (!flag) {
+            makeUtilities();
+        }
+
+        // Action to Take
+        int action = -1;
+        double max = -9999;
+        
         /* Position is Known */
         if (knownPosition) {
-            if (!flag) {
-                makeUtilities();
-            }
-    
-            int action = -1;
-            double max = -9999;
-    
             if (utilities[xPos][yPos] > max) {
                 action = STAY;
                 max = utilities[xPos][yPos];
@@ -669,10 +670,85 @@ public class theRobot extends JFrame {
             return action;
         }
     
-        /* TOOD: Position is Unknown */
-        
-        
-        return STAY;
+        double totalNorth = 0.0, totalSouth = 0.0, totalEast = 0.0, totalWest = 0.0, totalStay = 0.0;
+        double otherProb = (1 - moveProb) / 4; // chance of moving a different way than expected
+
+        for (int i = 0; i < mundo.width; i++) {
+            for (int j = 0; j < mundo.height; j++) {
+                // catch walls
+                if (mundo.grid[i][j] == 1) {
+                    continue;
+                }
+
+                // Stay
+                // totalStay += utilities[i][j] * moveProb * probs[i][j];
+                // totalStay += utilities[i][j-1] * otherProb * probs[i][j];
+                // totalStay += utilities[i][j+1] * otherProb * probs[i][j];
+                // totalStay += utilities[i-1][j] * otherProb * probs[i][j];
+                // totalStay += utilities[i+1][j] * otherProb * probs[i][j];
+
+                // Move North
+                totalNorth += utilities[i][j-1] * moveProb * probs[i][j];
+                totalNorth += utilities[i][j+1] * otherProb * probs[i][j];
+                totalNorth += utilities[i-1][j] * otherProb * probs[i][j];
+                totalNorth += utilities[i+1][j] * otherProb * probs[i][j];
+                totalNorth += utilities[i][j] * otherProb * probs[i][j];
+
+                // Move South
+                totalSouth += utilities[i][j+1] * moveProb * probs[i][j];
+                totalSouth += utilities[i][j-1] * otherProb * probs[i][j];
+                totalSouth += utilities[i-1][j] * otherProb * probs[i][j];
+                totalSouth += utilities[i+1][j] * otherProb * probs[i][j];
+                totalSouth += utilities[i][j] * otherProb * probs[i][j];
+
+                // Move East
+                totalEast += utilities[i+1][j] * moveProb * probs[i][j];
+                totalEast += utilities[i][j-1] * otherProb * probs[i][j];
+                totalEast += utilities[i][j+1] * otherProb * probs[i][j];
+                totalEast += utilities[i-1][j] * otherProb * probs[i][j];
+                totalEast += utilities[i][j] * otherProb * probs[i][j];
+                
+                // Move West
+                totalWest += utilities[i-1][j] * moveProb * probs[i][j];
+                totalWest += utilities[i][j-1] * otherProb * probs[i][j];
+                totalWest += utilities[i][j+1] * otherProb * probs[i][j];
+                totalWest += utilities[i+1][j] * otherProb * probs[i][j];
+                totalWest += utilities[i][j] * otherProb * probs[i][j];
+            }
+        }
+
+        // if (totalStay > max) {
+        //     action = STAY;
+        //     max = totalStay;
+        // }
+        if (totalNorth > max) {
+            action = NORTH;
+            max = totalNorth;
+        }
+        if (totalSouth > max) {
+            action = SOUTH;
+            max = totalSouth;
+        }
+        if (totalEast > max) {
+            action = EAST;
+            max = totalEast;
+        }
+        if (totalWest > max) {
+            action = WEST;
+            max = totalWest;
+        }
+    
+        printTotals(totalNorth, totalSouth, totalEast, totalWest, totalStay);
+
+        return action;
+    }
+
+    void printTotals(double totalNorth, double totalSouth, double totalEast, double totalWest, double totalStay) {
+        System.out.println("NORTH: " + totalNorth);
+        System.out.println("SOUTH: " + totalSouth);
+        System.out.println("EAST: " + totalEast);
+        System.out.println("WEST: " + totalWest);
+        System.out.println("STAY: " + totalStay + "\n");
     }
 
     void makeUtilities() {
@@ -715,11 +791,13 @@ public class theRobot extends JFrame {
         double[][] ogUtilities = copyArray(utilities);
 
         // For all s in S, update estimate of U_{i+1}(s) --> Repeat Until Convergence
-        double delta = 1;
+        double delta = 999999;
         final double DELTA_BREAK = 0.1;
         final double GAMMA = 0.95;
 
         printUtilities(utilities);
+
+        int iter = 0;
 
         while (delta > DELTA_BREAK) {
             delta = 0;
@@ -745,6 +823,12 @@ public class theRobot extends JFrame {
                 }
             }
             utilities = tmpUtilities;
+            
+            if (iter == 100 || iter == 200) {
+                printUtilities(utilities);
+            }
+
+            iter++;
         }
         printUtilities(utilities);
     }
@@ -762,21 +846,42 @@ public class theRobot extends JFrame {
 
     double maximum(double[][] utilities, int i, int j) {
         double maxSoFar = -9999999;
+        double otherProb = (1 - moveProb) / 4;
         
         if (utilities[i][j] > maxSoFar) {
-            maxSoFar = utilities[i][j];
+            maxSoFar = utilities[i][j] * moveProb;
+            maxSoFar += utilities[i+1][j] * otherProb;
+            maxSoFar += utilities[i-1][j] * otherProb;
+            maxSoFar += utilities[i][j+1] * otherProb;
+            maxSoFar += utilities[i][j-1] * otherProb;
         }
         if (i < mundo.width-1  && mundo.grid[i+1][j] != 1 && utilities[i+1][j] > maxSoFar) {
-            maxSoFar = utilities[i+1][j];
+            maxSoFar = utilities[i+1][j] * moveProb;
+            maxSoFar += utilities[i][j] * otherProb;
+            maxSoFar += utilities[i-1][j] * otherProb;
+            maxSoFar += utilities[i][j+1] * otherProb;
+            maxSoFar += utilities[i][j-1] * otherProb;
         }
         if (i != 0 && mundo.grid[i-1][j] != 1 && utilities[i-1][j] > maxSoFar) {
-            maxSoFar = utilities[i-1][j];
+            maxSoFar = utilities[i-1][j] * moveProb;
+            maxSoFar += utilities[i+1][j] * otherProb;
+            maxSoFar += utilities[i][j] * otherProb;
+            maxSoFar += utilities[i][j+1] * otherProb;
+            maxSoFar += utilities[i][j-1] * otherProb;
         }
         if (j < mundo.height-1 && mundo.grid[i][j+1] != 1 && utilities[i][j+1] > maxSoFar) {
-            maxSoFar = utilities[i][j+1];
+            maxSoFar = utilities[i][j+1] * moveProb;
+            maxSoFar += utilities[i+1][j] * otherProb;
+            maxSoFar += utilities[i][j] * otherProb;
+            maxSoFar += utilities[i-1][j] * otherProb;
+            maxSoFar += utilities[i][j-1] * otherProb;
         }
         if (j != 0 && mundo.grid[i][j-1] != 1 && utilities[i][j-1] > maxSoFar) {
-            maxSoFar = utilities[i][j-1];
+            maxSoFar = utilities[i][j-1] * moveProb;
+            maxSoFar += utilities[i+1][j] * otherProb;
+            maxSoFar += utilities[i][j] * otherProb;
+            maxSoFar += utilities[i-1][j] * otherProb;
+            maxSoFar += utilities[i][j+1] * otherProb;
         }
         
         return maxSoFar;
